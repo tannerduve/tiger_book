@@ -1,4 +1,0 @@
-(lang dune 3.19)
-(name ml)
-(sections (lib .) (bin ../../bin))
-(files (lib (META dune-package opam)) (bin (ml)))

@@ -1,8 +1,0 @@
-lib: [
-  "_build/install/default/lib/ml/META"
-  "_build/install/default/lib/ml/dune-package"
-  "_build/install/default/lib/ml/opam"
-]
-bin: [
-  "_build/install/default/bin/ml"
-]
