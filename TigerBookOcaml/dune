@@ -1,0 +1,5 @@
+; TigerBookOcaml/2-lexing/dune
+(executable
+ (name ast)
+ (public_name ast)
+ (modules ast))

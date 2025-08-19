@@ -4,5 +4,7 @@ lib: [
   "_build/install/default/lib/ml/opam"
 ]
 bin: [
+  "_build/install/default/bin/ast"
+  "_build/install/default/bin/intro"
   "_build/install/default/bin/ml"
 ]

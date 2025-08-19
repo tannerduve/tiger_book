@@ -3,7 +3,7 @@ opam-version: "2.0"
 synopsis: "A short synopsis"
 description: "A longer description"
 maintainer: ["Maintainer Name <maintainer@example.com>"]
-authors: ["Author Name <author@example.com>"]
+authors: ["Tanner Duve <tannerduve@gmail.com>"]
 license: "LICENSE"
 tags: ["add topics" "to describe" "your" "project"]
 homepage: "https://github.com/username/reponame"
