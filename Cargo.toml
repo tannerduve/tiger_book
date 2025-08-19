@@ -1,0 +1,3 @@
+[workspace]
+members = ["rust/tigerbook-rs"]
+resolver = "2"
