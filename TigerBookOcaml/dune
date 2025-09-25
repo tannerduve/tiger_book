@@ -1,5 +1,1 @@
-; TigerBookOcaml/2-lexing/dune
-(executable
- (name ast)
- (public_name ast)
- (modules ast))
+; TigerBookOcaml root dune file - empty since modules are in lib/

@@ -44,7 +44,7 @@ def prog : stm :=
             IdExp "a",
             OpExp (IdExp "a") Minus (NumExp 1)
           ])
-          (OpExp (NumExp 10) Times (IdExp "a"))
+          (OpExp (NumExp 1) Times (IdExp "a"))
         )
       )
       (PrintStm [IdExp "b"]))

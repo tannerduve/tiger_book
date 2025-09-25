@@ -1,1 +1,31 @@
+# Lean build artifacts
 /.lake
+
+# OCaml/Dune build artifacts
+_build/
+*.cmi
+*.cmo
+*.cmx
+*.o
+*.a
+*.cma
+*.cmxa
+*.cmxs
+*.ml-gen
+*.d
+.merlin
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

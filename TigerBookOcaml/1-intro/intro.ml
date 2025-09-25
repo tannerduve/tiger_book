@@ -36,10 +36,7 @@ and maxargsexp (e : exp) : int =
 
 type table = (id * int) list
 
-let update (l : 'a list) (s : 'a) : 'a list =
-  match l with
-  | [] -> [s]
-  | hd :: tl -> s :: hd :: tl 
+let update (l : 'a list) (s : 'a) : 'a list = s :: l
 
 let rec lookup (t : table) (i : id) : int =
   match t with
@@ -105,8 +102,6 @@ then tree₁ is available for lookups while tree₂ can be used
 (* 1.1a. Implement a `member` function which returns `true` if an item is found, else `false` *)
 type key = string 
 type tree = LEAF | TREE of tree * key * tree 
-
-type empty = EmptyLeaf
 
 let rec insert (k : key) (t : tree) : tree =
   match t with 

@@ -1,4 +1,5 @@
 (executable
- (public_name ml)
+ (public_name tiger-parser)
  (name main)
- (libraries ml))
+ (modules main)
+ (libraries tiger))

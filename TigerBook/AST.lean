@@ -20,7 +20,7 @@ inductive Expr where
   | intConst (n : Int)
   | nil
   | lvalue (lv : LValue)
-  | neg (e : Expr)                     -- for unary minus
+  | neg (e : Expr)
   | binOp (e1 : Expr) (op : BinOp) (e2 : Expr)
   | assign (name : LValue) (exp : Expr)
   | call (func : String) (args : List Expr)
