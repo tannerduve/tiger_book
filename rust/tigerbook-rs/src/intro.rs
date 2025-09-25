@@ -34,7 +34,7 @@ pub fn maxargsexp(e: &Exp) -> i32 {
     }
 }
 
-/* ---------- Interpreter (pure, table-threading) ---------- */
+/* ---------- Interpreter ---------- */
 
 type Table = Vec<(Id, i32)>;
 
@@ -46,7 +46,6 @@ pub fn lookup(t: &Table, k: &str) -> i32 {
 }
 
 pub fn update_table(mut t: Table, k: Id, v: i32) -> Table {
-    // Assoc-list semantics: shadow previous binding by pushing a new pair.
     t.push((k, v));
     t
 }
@@ -99,7 +98,23 @@ pub fn interp(s: &Stm, t: Table) -> Table {
 
 type Key = String;
 
+#[derive(Clone, Debug)]
 pub enum BinTree {
     Leaf,
     Tree(Box<BinTree>, Key, Box<BinTree>)
+}
+
+pub fn insert(k : &Key, t : &BinTree) -> BinTree {
+    match t {
+        BinTree::Leaf => BinTree::Tree(Box::new(BinTree::Leaf), k.to_string(), Box::new(BinTree::Leaf)),
+        BinTree::Tree(lt, x, rt) => {
+            if k < &x {
+                BinTree::Tree(Box::new(insert(k, &lt)), x.to_string(), rt.clone())
+            } else if k > x {
+                BinTree::Tree(lt.clone(), x.to_string(), Box::new(insert(k, &rt)))
+            } else {
+                t.clone()
+            }
+        }
+    }
 }
