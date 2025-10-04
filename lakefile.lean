@@ -12,7 +12,10 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"
 
 require Parser from git
-  "https://github.com/fgdorais/lean4-parser"
+  "https://github.com/fgdorais/lean4-parser" @ "main"
+
+require cslib from git
+  "https://github.com/leanprover/cslib.git" @ "main"
 
 @[default_target]
 lean_lib «TigerBook» where
