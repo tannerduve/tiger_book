@@ -1,17 +1,12 @@
-/-
+import TigerBook.Symbol
+
 open Symbol
 
-module Types = 
-  struct 
+abbrev unique := IO.Ref Unit
 
-  type unique = unit ref
-
-  type ty = 
-  | RECORD of (Symbol.symbol * ty) list * unique 
-  | NIL 
-  | INT 
-  | STRING 
-  | ARRAY of ty * unique 
-
-end
--/
+inductive ty : Type where
+| Record : (List (Symbol × ty)) → Unique → ty
+| Nil : ty
+| Int : ty
+| String : ty
+| Array : ty → Unique → ty
