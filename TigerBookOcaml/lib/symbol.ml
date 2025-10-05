@@ -1,6 +1,4 @@
-module Symbol = 
-  struct 
-  type symbol = string * int 
+type symbol = string * int 
 
   module H = Hashtbl
 
@@ -36,8 +34,6 @@ module Symbol =
 
   let add = Table.add
   let look = Table.find_opt
-
-end
 
 module type Symbol = sig 
   type symbol

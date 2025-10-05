@@ -1,7 +1,3 @@
-open Symbol
-
-module Types = 
-  struct 
 
   type unique = unit ref
 
@@ -11,5 +7,3 @@ module Types =
   | INT 
   | STRING 
   | ARRAY of ty * unique 
-
-end

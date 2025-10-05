@@ -1,6 +1,6 @@
 (library
  (name tiger)
- (modules ast parser tigerLexer semant types symbol)
+ (modules :standard) ;
  (libraries menhirLib))
 
 (rule

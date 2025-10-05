@@ -60,34 +60,36 @@ open Ast
 %left OR
 %left AND
 %nonassoc EQ NE LT LE GT GE
+%nonassoc THEN
+%nonassoc ELSE
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right UMINUS
 
-%type <expr> exp
-%type <lvalue> vars
-%type <expr list> args seq_elems
+%type <Ast.expr> exp
+%type <Ast.lvalue> vars
+%type <Ast.expr list> args seq_elems
 %type <string * expr> record_field
 %type <(string * expr) list> record_fields
-%type <field> type_field
-%type <field list> type_fields
-%type <ty> ty
-%type <field> field
-%type <dec list> decs
-%type <dec> dec
-%type <vardecl> var_decl
-%type <typedec list> type_group
-%type <fundec> fun_one
-%type <fundec list> fun_group
+%type <Ast.field> type_field
+%type <Ast.field list> type_fields
+%type <Ast.ty> ty
+%type <Ast.field> field
+%type <Ast.dec list> decs
+%type <Ast.dec> dec
+%type <Ast.vardecl> var_decl
+%type <Ast.typedec list> type_group
+%type <Ast.fundec> fun_one
+%type <Ast.fundec list> fun_group
 
 (* Helper rule types *)
-%type <expr list> comma_separated_exps comma_separated_nonempty_exps
-%type <field list> comma_separated_fields comma_separated_nonempty_fields
-%type <(string * expr) list> comma_separated_record_fields comma_separated_nonempty_record_fields
-%type <field list> comma_separated_type_fields comma_separated_nonempty_type_fields
-%type <expr list> semi_separated_exps semi_separated_nonempty_exps
+%type <Ast.expr list> comma_separated_exps comma_separated_nonempty_exps
+%type <Ast.field list> comma_separated_fields comma_separated_nonempty_fields
+%type <(string * Ast.expr) list> comma_separated_record_fields comma_separated_nonempty_record_fields
+%type <Ast.field list> comma_separated_type_fields comma_separated_nonempty_type_fields
+%type <Ast.expr list> semi_separated_exps semi_separated_nonempty_exps
 
-%start <expr option> prog
+%start <Ast.expr option> prog
 
 %%
 
@@ -228,12 +230,11 @@ exp:
 
   | t = ID; LBRACK; sz = exp; RBRACK; OF; init = exp
       { ArrayExp { typ = t; size = sz; init } }
-
-  | IF; c = exp; THEN; th = exp
-      { IfThen { test = c; then_ = th } }
-  | IF; c = exp; THEN; th = exp; ELSE; el = exp
-      { IfThenElse { test = c; then_ = th; else_ = el } }
-
+  | IF; c = exp; THEN; th = exp                 
+    %prec THEN { IfThen { test = c; then_ = th } }
+  | IF; c = exp; THEN; th = exp; ELSE; el = exp           
+    { IfThenElse { test = c; then_ = th; else_ = el } }
+    
   | WHILE; c = exp; DO; b = exp
       { WhileExp { test = c; body = b } }
 
