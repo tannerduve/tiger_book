@@ -1,4 +1,7 @@
 mod intro;
+mod ast;
+mod symbol; 
+mod types;
 use crate::intro::{Exp, Stm, BinTree, Binop, interp};
 
 fn main() {
