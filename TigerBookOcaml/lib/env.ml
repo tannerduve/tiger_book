@@ -9,7 +9,6 @@ let base_tenv =
   |> add (symbol "int") Types.INT
   |> add (symbol "string") Types.STRING 
 
-(* TODO: FINISH *)
 let base_venv = 
   empty 
   |> add (symbol "print") (FunEntry {formals = [Types.STRING]; result = Types.NIL})
@@ -17,6 +16,11 @@ let base_venv =
   |> add (symbol "getchar") (FunEntry {formals = []; result = Types.STRING})
   |> add (symbol "ord") (FunEntry {formals = [Types.STRING]; result = Types.INT})
   |> add (symbol "concat") (FunEntry {formals = [Types.STRING; Types.STRING]; result = Types.STRING})
+  |> add (symbol "chr") (FunEntry {formals = [Types.INT]; result = Types.STRING})
+  |> add (symbol "size") (FunEntry {formals = [Types.STRING]; result = Types.INT})
+  |> add (symbol "substring") (FunEntry {formals = [Types.STRING; Types.INT; Types.INT]; result = Types.STRING})
+  |> add (symbol "not") (FunEntry {formals = [Types.INT]; result = Types.INT})
+  |> add (symbol "exit") (FunEntry {formals = [Types.INT]; result = Types.NIL})
 
 module type Env = sig 
   type ty
