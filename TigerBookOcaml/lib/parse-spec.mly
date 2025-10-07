@@ -1,59 +1,15 @@
 %{
 open Ast
+let pos_of (p: Lexing.position) = p.Lexing.pos_cnum
+let sym = Symbol.symbol
 %}
 
-/* Keywords */
-%token ARRAY
-%token BREAK
-%token DO 
-%token ELSE
-%token END 
-%token FOR 
-%token FUNCTION
-%token IF 
-%token IN 
-%token LET
-%token NIL
-%token OF
-%token THEN 
-%token TO 
-%token TYPE 
-%token VAR 
-%token WHILE 
-
-/* Punctuation */
-%token COMMA      /* ,  */
-%token COLON      /* :  */
-%token SEMI       /* ;  */
-%token LPAREN     /* (  */
-%token RPAREN     /* )  */
-%token LBRACK     /* [  */
-%token RBRACK     /* ]  */
-%token LBRACE     /* {  */
-%token RBRACE     /* }  */
-%token DOT        /* .  */
-
-/* Operators */
-%token ASSIGN     /* := */
-%token PLUS       /* +  */
-%token MINUS      /* -  */
-%token TIMES      /* *  */
-%token DIVIDE     /* /  */
-%token EQ         /* =  */
-%token NE         /* <> */
-%token LT         /* <  */
-%token LE         /* <= */
-%token GT         /* >  */
-%token GE         /* >= */
-%token AND        /* &  */
-%token OR         /* |  */
-
-/* Literals */
+%token ARRAY BREAK DO ELSE END FOR FUNCTION IF IN LET NIL OF THEN TO TYPE VAR WHILE
+%token COMMA COLON SEMI LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE DOT
+%token ASSIGN PLUS MINUS TIMES DIVIDE EQ NE LT LE GT GE AND OR
 %token <string> ID
-%token <int>    INT
+%token <int> INT
 %token <string> STRING
-
-/* End of input */
 %token EOF
 
 %nonassoc ASSIGN
@@ -66,202 +22,157 @@ open Ast
 %left TIMES DIVIDE
 %right UMINUS
 
-%type <Ast.expr> exp
-%type <Ast.lvalue> vars
-%type <Ast.expr list> args seq_elems
-%type <string * expr> record_field
-%type <(string * expr) list> record_fields
-%type <Ast.field> type_field
-%type <Ast.field list> type_fields
-%type <Ast.ty> ty
+%type <Ast.exp> exp
+%type <Ast.var> vars
+%type <(Ast.exp * Ast.pos) list> seq_elems
+%type <(Ast.symbol * Ast.exp * Ast.pos) list> record_fields
+%type <(Ast.symbol * Ast.exp * Ast.pos)> record_field
 %type <Ast.field> field
+%type <Ast.field list> fields
+%type <Ast.ty> ty
 %type <Ast.dec list> decs
 %type <Ast.dec> dec
-%type <Ast.vardecl> var_decl
-%type <Ast.typedec list> type_group
 %type <Ast.fundec> fun_one
 %type <Ast.fundec list> fun_group
+%type <Ast.typedecrec list> type_group
+%type <Ast.exp list> args
+%type <Ast.exp list> args_nonempty
+%type <Ast.field list> fields_nonempty
+%type <(Ast.symbol * Ast.exp * Ast.pos) list> record_fields_nonempty
+%type <(Ast.exp * Ast.pos) list> seq_elems_nonempty
+%type <Ast.dec> var_decl
 
-(* Helper rule types *)
-%type <Ast.expr list> comma_separated_exps comma_separated_nonempty_exps
-%type <Ast.field list> comma_separated_fields comma_separated_nonempty_fields
-%type <(string * Ast.expr) list> comma_separated_record_fields comma_separated_nonempty_record_fields
-%type <Ast.field list> comma_separated_type_fields comma_separated_nonempty_type_fields
-%type <Ast.expr list> semi_separated_exps semi_separated_nonempty_exps
 
-%start <Ast.expr option> prog
+%start <Ast.exp option> prog
 
 %%
 
-(* Helper rules for comma-separated lists *)
-comma_separated_exps:
-  |                                       { [] }
-  | xs = comma_separated_nonempty_exps    { xs }
-
-comma_separated_nonempty_exps:
-  | x = exp                               { [x] }
-  | x = exp; COMMA; xs = comma_separated_nonempty_exps { x :: xs }
-
-comma_separated_fields:
-  |                                       { [] }
-  | xs = comma_separated_nonempty_fields  { xs }
-
-comma_separated_nonempty_fields:
-  | x = field                             { [x] }
-  | x = field; COMMA; xs = comma_separated_nonempty_fields { x :: xs }
-
-comma_separated_record_fields:
-  |                                       { [] }
-  | xs = comma_separated_nonempty_record_fields { xs }
-
-comma_separated_nonempty_record_fields:
-  | x = record_field                      { [x] }
-  | x = record_field; COMMA; xs = comma_separated_nonempty_record_fields { x :: xs }
-
-comma_separated_type_fields:
-  |                                       { [] }
-  | xs = comma_separated_nonempty_type_fields { xs }
-
-comma_separated_nonempty_type_fields:
-  | x = type_field                        { [x] }
-  | x = type_field; COMMA; xs = comma_separated_nonempty_type_fields { x :: xs }
-
-semi_separated_exps:
-  |                                       { [] }
-  | xs = semi_separated_nonempty_exps     { xs }
-
-semi_separated_nonempty_exps:
-  | x = exp                               { [x] }
-  | x = exp; SEMI; xs = semi_separated_nonempty_exps { x :: xs }
-
-/* program */
 prog:
-  | EOF                        { None }
-  | e = exp; EOF              { Some e }
+  | EOF                           { None }
+  | e = exp; EOF                  { Some e }
 
-/* lvalues */
 vars:
-  | x = ID                                   { SimpleVar x }
-  | v = vars; DOT; f = ID                    { FieldVar (v, f) }
-  | x = ID; LBRACK; e = exp; RBRACK         { SubscriptVar (SimpleVar x, e) }
-  | v = vars; LBRACK; e = exp; RBRACK       { SubscriptVar (v, e) }
+  | x = ID                        { SimpleVar (sym x, pos_of $startpos) }
+  | v = vars; DOT; f = ID         { FieldVar (v, sym f, pos_of $startpos) }
+  | x = ID; LBRACK; e = exp; RBRACK
+                                  { SubscriptVar (SimpleVar (sym x, pos_of $startpos), e, pos_of $startpos) }
+  | v = vars; LBRACK; e = exp; RBRACK
+                                  { SubscriptVar (v, e, pos_of $startpos) }
 
-/* call args and record literal fields (value-level) */
 args:
-  | xs = comma_separated_exps               { xs }
+  |                              { [] }
+  | xs = args_nonempty           { xs }
+
+args_nonempty:
+  | e = exp                      { [e] }
+  | e = exp; COMMA; xs = args_nonempty { e :: xs }
+
+record_fields:
+  |                              { [] }
+  | xs = record_fields_nonempty  { xs }
+
+record_fields_nonempty:
+  | rf = record_field            { [rf] }
+  | rf = record_field; COMMA; xs = record_fields_nonempty { rf :: xs }
 
 record_field:
-  | k = ID; EQ; e = exp                     { (k, e) }
-record_fields:
-  | fs = comma_separated_record_fields      { fs }
+  | k = ID; EQ; e = exp          { (sym k, e, pos_of $startpos) }
 
-/* sequences (exp ; exp ; …) */
 seq_elems:
-  | xs = semi_separated_exps                { xs }
+  |                              { [] }
+  | xs = seq_elems_nonempty      { xs }
 
-/* type expessions (type RHS) */
-type_field:
-  | x = ID; COLON; t = ID { { name = x; typ = t } }
+seq_elems_nonempty:
+  | e = exp                      { [ (e, pos_of $startpos) ] }
+  | e = exp; SEMI; xs = seq_elems_nonempty
+                                 { (e, pos_of $startpos) :: xs }
 
-type_fields:
-  | fs = comma_separated_type_fields       { fs }
+fields:
+  |                              { [] }
+  | xs = fields_nonempty         { xs }
 
-/* type rules build a field list now */
-ty:
-  | t = ID                                 { NameTy t }
-  | LBRACE; fs = type_fields; RBRACE       { RecordTy fs }
-  | ARRAY; OF; t = ID                      { ArrayTy t }
+fields_nonempty:
+  | f = field                    { [f] }
+  | f = field; COMMA; xs = fields_nonempty { f :: xs }
 
-/* function parameter (same shape as type_field) */
 field:
-  | x = ID; COLON; t = ID                    { { name = x; typ = t } }
+  | x = ID; COLON; t = ID        { { name = sym x; escape = ref true; typ = sym t; pos = pos_of $startpos } }
 
-/* declaration groups */
+ty:
+  | t = ID                       { NameTy (sym t, pos_of $startpos) }
+  | LBRACE; fs = fields; RBRACE  { RecordTy fs }
+  | ARRAY; OF; t = ID            { ArrayTy (sym t, pos_of $startpos) }
+
 decs:
-  |                                          { [] }
-  | d = dec; ds = decs                       { d :: ds }
+  |                              { [] }
+  | d = dec; ds = decs           { d :: ds }
 
 dec:
-  | v = var_decl                             { VarDec v }
-  | tg = type_group                          { TypeDec tg }
-  | fg = fun_group                           { FunctionDec fg }
+  | v = var_decl                 { v }
+  | tg = type_group              { TypeDec tg }
+  | fg = fun_group               { FunctionDec fg }
 
-/* single var decl */
 var_decl:
   | VAR; name = ID; ASSIGN; init = exp
-      { { name; typ = None; init } }
+      { VarDec { name = sym name; escape = ref true; typ = None; init; pos = pos_of $startpos } }
   | VAR; name = ID; COLON; t = ID; ASSIGN; init = exp
-      { { name; typ = Some t; init } }
+      { VarDec { name = sym name; escape = ref true; typ = Some (sym t, pos_of $startpos(t)); init; pos = pos_of $startpos } }
 
-/* consecutive TYPE decls are one group (mutual recursion) */
 type_group:
   | TYPE; tname = ID; EQ; t = ty
-      { [ (tname, t) ] }
+      { [ { name = sym tname; ty = t; pos = pos_of $startpos } ] }
   | TYPE; tname = ID; EQ; t = ty; rest = type_group
-      { (tname, t) :: rest }
+      { { name = sym tname; ty = t; pos = pos_of $startpos } :: rest }
 
-/* function decl (one), then group them if consecutive */
 fun_one:
-  | FUNCTION; fn = ID; LPAREN; params = comma_separated_fields; RPAREN; EQ; bod = exp
-      { { name = fn; params; result = None; body = bod } }
-  | FUNCTION; fn = ID; LPAREN; params = comma_separated_fields; RPAREN; COLON; rt = ID; EQ; bod = exp
-      { { name = fn; params; result = Some rt; body = bod } }
+  | FUNCTION; fn = ID; LPAREN; params = fields; RPAREN; EQ; bod = exp
+      { { name = sym fn; params; result = None; body = bod; pos = pos_of $startpos } }
+  | FUNCTION; fn = ID; LPAREN; params = fields; RPAREN; COLON; rt = ID; EQ; bod = exp
+      { { name = sym fn; params; result = Some (sym rt, pos_of $startpos(rt)); body = bod; pos = pos_of $startpos } }
 
 fun_group:
-  | f = fun_one                               { [ f ] }
-  | f = fun_one; rest = fun_group             { f :: rest }
+  | f = fun_one                  { [f] }
+  | f = fun_one; rest = fun_group { f :: rest }
 
-/* expressions */
 exp:
-  | i = INT                                  { IntConst i }
-  | s = STRING                               { StringConst s }
-  | NIL                                      { Nil }
-  | v = vars                                 { LValue v }
-  | v = vars; ASSIGN; e = exp %prec ASSIGN  { Assign { name = v; exp = e } }
-
+  | i = INT                      { IntExp i }
+  | s = STRING                   { StringExp (s, pos_of $startpos) }
+  | NIL                          { NilExp }
+  | v = vars                     { VarExp v }
+  | v = vars; ASSIGN; e = exp %prec ASSIGN
+                                 { AssignExp { var = v; exp = e; pos = pos_of $startpos } }
   | f = ID; LPAREN; a = args; RPAREN
-      { CallExp { func = f; exprs = a } }
-
+                                 { CallExp { func = sym f; args = a; pos = pos_of $startpos } }
   | LPAREN; es = seq_elems; RPAREN
-      { match es with [] -> SeqExp [] | [e] -> e | el -> SeqExp el }
-
+                                 { SeqExp es }
   | t = ID; LBRACE; fs = record_fields; RBRACE
-      { RecordExp { typ = t; fields = fs } }
-
+                                 { RecordExp { typ = sym t; fields = fs; pos = pos_of $startpos } }
   | t = ID; LBRACK; sz = exp; RBRACK; OF; init = exp
-      { ArrayExp { typ = t; size = sz; init } }
-  | IF; c = exp; THEN; th = exp                 
-    %prec THEN { IfThen { test = c; then_ = th } }
-  | IF; c = exp; THEN; th = exp; ELSE; el = exp           
-    { IfThenElse { test = c; then_ = th; else_ = el } }
-    
+                                 { ArrayExp { typ = sym t; size = sz; init; pos = pos_of $startpos } }
+  | IF; c = exp; THEN; th = exp %prec THEN
+                                 { IfExp { test = c; then_ = th; else_ = None; pos = pos_of $startpos } }
+  | IF; c = exp; THEN; th = exp; ELSE; el = exp
+                                 { IfExp { test = c; then_ = th; else_ = Some el; pos = pos_of $startpos } }
   | WHILE; c = exp; DO; b = exp
-      { WhileExp { test = c; body = b } }
-
+                                 { WhileExp { test = c; body = b; pos = pos_of $startpos } }
   | FOR; v = ID; ASSIGN; lo = exp; TO; hi = exp; DO; b = exp
-      { ForExp { var = v; lo; hi; body = b } }
-
-  | BREAK                                   { Break }
-
-  | LET; ds = decs; IN; body = seq_elems; END
-      { LetExp { decs = ds; body } }
-
+                                 { ForExp { var = sym v; escape = ref true; lo; hi; body = b; pos = pos_of $startpos } }
+  | BREAK                        { BreakExp (pos_of $startpos) }
+  | LET; ds = decs; IN; b = exp; END
+                                 { LetExp { decs = ds; body = b; pos = pos_of $startpos } }
   | MINUS; e = exp %prec UMINUS
-      { Minus e }
-
-  | e1 = exp; PLUS;   e2 = exp            { BinOp (e1, Plus,  e2) }
-  | e1 = exp; MINUS;  e2 = exp            { BinOp (e1, Minus, e2) }
-  | e1 = exp; TIMES;  e2 = exp            { BinOp (e1, Times, e2) }
-  | e1 = exp; DIVIDE; e2 = exp            { BinOp (e1, Div,   e2) }
-
-  | e1 = exp; EQ; e2 = exp                { BinOp (e1, Eq,  e2) }
-  | e1 = exp; NE; e2 = exp                { BinOp (e1, Neq, e2) }
-  | e1 = exp; LT; e2 = exp                { BinOp (e1, Lt,  e2) }
-  | e1 = exp; LE; e2 = exp                { BinOp (e1, Le,  e2) }
-  | e1 = exp; GT; e2 = exp                { BinOp (e1, Gt,  e2) }
-  | e1 = exp; GE; e2 = exp                { BinOp (e1, Ge,  e2) }
-
-  | e1 = exp; AND; e2 = exp               { BinOp (e1, And, e2) }
-  | e1 = exp; OR;  e2 = exp               { BinOp (e1, Or,  e2) }
-  
-%%
+                                 { OpExp { left = IntExp 0; oper = MinusOp; right = e; pos = pos_of $startpos } }
+  | e1 = exp; PLUS;   e2 = exp   { OpExp { left = e1; oper = PlusOp;   right = e2; pos = pos_of $startpos } }
+  | e1 = exp; MINUS;  e2 = exp   { OpExp { left = e1; oper = MinusOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; TIMES;  e2 = exp   { OpExp { left = e1; oper = TimesOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; DIVIDE; e2 = exp   { OpExp { left = e1; oper = DivideOp; right = e2; pos = pos_of $startpos } }
+  | e1 = exp; EQ; e2 = exp       { OpExp { left = e1; oper = EqOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; NE; e2 = exp       { OpExp { left = e1; oper = NeqOp; right = e2; pos = pos_of $startpos } }
+  | e1 = exp; LT; e2 = exp       { OpExp { left = e1; oper = LtOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; LE; e2 = exp       { OpExp { left = e1; oper = LeOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; GT; e2 = exp       { OpExp { left = e1; oper = GtOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; GE; e2 = exp       { OpExp { left = e1; oper = GeOp;  right = e2; pos = pos_of $startpos } }
+  | e1 = exp; AND; e2 = exp
+                                 { IfExp { test = e1; then_ = e2; else_ = Some (IntExp 0); pos = pos_of $startpos } }
+  | e1 = exp; OR;  e2 = exp
+                                 { IfExp { test = e1; then_ = IntExp 1; else_ = Some e2; pos = pos_of $startpos } }

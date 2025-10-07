@@ -1,2 +1,4 @@
 (test
- (name test_ml))
+ (name test_ml)
+ (libraries alcotest tiger)
+ (modules test_ml))

@@ -1,16 +1,16 @@
 (library
  (name tiger)
- (modules :standard) ;
+ (modules :standard)
  (libraries menhirLib))
 
 (rule
  (targets parser.ml parser.mli)
- (deps parse-spec.mly ast.ml)
+ (deps parse-spec.mly)
  (action
-  (bash "ocamlfind ocamlc -I . -c ast.ml && menhir --explain --base parser --infer parse-spec.mly")))
+  (run menhir --explain --base parser %{deps})))
 
 (rule
  (targets tigerLexer.ml)
  (deps tigerLexer.mll parser.mli)
  (action
-  (run ocamllex -o tigerLexer.ml tigerLexer.mll)))
+  (run ocamllex -o %{targets} tigerLexer.mll)))

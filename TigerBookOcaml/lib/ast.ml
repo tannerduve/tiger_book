@@ -1,76 +1,45 @@
 (* AST types for Tiger language *)
-type ident  = string      (* value/function names *)
-type tident = string      (* type names *)
+  type pos = int
+  type symbol = Symbol.symbol
 
-type binop =
-  | Plus | Minus | Times | Div
-  | Eq | Neq | Lt | Le | Gt | Ge
-  | And | Or
+  type oper =
+    | PlusOp | MinusOp | TimesOp | DivideOp
+    | EqOp | NeqOp | LtOp | LeOp | GtOp | GeOp
 
-type expr =
-  | StringConst of string
-  | IntConst of int
-  | Nil
-  | LValue of lvalue
-  | Minus of expr
-  | BinOp of expr * binop * expr
-  | Assign of { name: lvalue; exp: expr }
-  | CallExp of { func: string; exprs: expr list }
-  | SeqExp of expr list
-  | RecordExp of { typ: string; fields: (string * expr) list }
-  | ArrayExp of { typ: string; size: expr; init: expr }
-  | IfThen of { test: expr; then_: expr }
-  | IfThenElse of { test: expr; then_: expr; else_: expr }
-  | WhileExp of { test: expr; body: expr }
-  | ForExp of { var: string; lo: expr; hi: expr; body: expr }
-  | Break
-  | LetExp of { decs: dec list; body: expr list }
+  type ty =
+    | NameTy   of symbol * pos
+    | RecordTy of field list
+    | ArrayTy  of symbol * pos
 
-and lvalue =
-  | SimpleVar of string
-  | FieldVar of lvalue * string
-  | SubscriptVar of lvalue * expr
+  and field = { name : symbol; escape : bool ref; typ : symbol; pos : pos }
 
-and field = { name: ident; typ: tident }
+  type typedecrec = { name : symbol; ty : ty; pos : pos }
 
-and ty =
-  | NameTy   of tident
-  | RecordTy of field list
-  | ArrayTy  of tident
+  type var =
+    | SimpleVar    of symbol * pos
+    | FieldVar     of var * symbol * pos
+    | SubscriptVar of var * exp * pos
 
-and typedec = tident * ty
+  and exp =
+    | VarExp    of var
+    | NilExp
+    | IntExp    of int
+    | StringExp of string * pos
+    | CallExp   of { func  : symbol; args  : exp list; pos : pos }
+    | OpExp     of { left  : exp; oper  : oper; right : exp; pos : pos }
+    | RecordExp of { fields : (symbol * exp * pos) list; typ : symbol; pos : pos }
+    | SeqExp    of (exp * pos) list
+    | AssignExp of { var : var; exp : exp; pos : pos }
+    | IfExp     of { test : exp; then_ : exp; else_ : exp option; pos : pos }
+    | WhileExp  of { test : exp; body : exp; pos : pos }
+    | ForExp    of { var : symbol; escape : bool ref; lo : exp; hi : exp; body : exp; pos : pos }
+    | BreakExp  of pos
+    | LetExp    of { decs : dec list; body : exp; pos : pos }
+    | ArrayExp  of { typ : symbol; size : exp; init : exp; pos : pos }
 
-and vardecl = { name: ident; typ: tident option; init: expr }
+  and dec =
+    | FunctionDec of fundec list
+    | VarDec      of { name : symbol; escape : bool ref; typ : (symbol * pos) option; init : exp; pos : pos }
+    | TypeDec     of typedecrec list
 
-and fundec =
-  { name   : ident
-  ; params : field list
-  ; result : tident option
-  ; body   : expr }
-
-and dec =
-  | FunctionDec of fundec list
-  | VarDec of vardecl
-  | TypeDec of typedec list
-
-(* Pretty printing functions for testing *)
-let rec string_of_expr = function
-  | IntConst i -> string_of_int i
-  | StringConst s -> "\"" ^ s ^ "\""
-  | Nil -> "nil"
-  | LValue lv -> string_of_lvalue lv
-  | Minus e -> "-(" ^ string_of_expr e ^ ")"
-  | BinOp (e1, op, e2) -> 
-      "(" ^ string_of_expr e1 ^ " " ^ string_of_binop op ^ " " ^ string_of_expr e2 ^ ")"
-  | Break -> "break"
-  | _ -> "<complex expression>"
-
-and string_of_lvalue = function
-  | SimpleVar s -> s
-  | FieldVar (lv, f) -> string_of_lvalue lv ^ "." ^ f
-  | SubscriptVar (lv, e) -> string_of_lvalue lv ^ "[" ^ string_of_expr e ^ "]"
-
-and string_of_binop = function
-  | Plus -> "+" | Minus -> "-" | Times -> "*" | Div -> "/"
-  | Eq -> "=" | Neq -> "<>" | Lt -> "<" | Le -> "<="
-  | Gt -> ">" | Ge -> ">=" | And -> "&" | Or -> "|"
+  and fundec = { name : symbol; params : field list; result : (symbol * pos) option; body : exp; pos : pos }

@@ -3,17 +3,17 @@ let test_parse input =
   try
     let lexbuf = Lexing.from_string input in
     match Tiger.Parser.prog Tiger.TigerLexer.token lexbuf with
-    | Some expr -> 
-        Printf.printf "Parsed: %s -> %s\n" input (Tiger.Ast.string_of_expr expr)
+    | Some _expr -> 
+        Printf.printf "✓ Parsed: %s\n" input
     | None -> 
-        Printf.printf "Empty program: %s\n" input
+        Printf.printf "✓ Empty program: %s\n" input
   with
   | Tiger.Parser.Error ->
-      Printf.printf "Parse error in: %s\n" input
+      Printf.printf "✗ Parse error in: %s\n" input
   | Tiger.TigerLexer.SyntaxError msg ->
-      Printf.printf "Lexer error in '%s': %s\n" input msg
+      Printf.printf "✗ Lexer error in '%s': %s\n" input msg
   | e ->
-      Printf.printf "Error parsing '%s': %s\n" input (Printexc.to_string e)
+      Printf.printf "✗ Error parsing '%s': %s\n" input (Printexc.to_string e)
 
 let () =
   print_endline "Testing Tiger parser...";
