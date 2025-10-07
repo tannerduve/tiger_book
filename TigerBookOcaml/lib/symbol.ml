@@ -1,4 +1,3 @@
-
 type symbol = string * int 
 
   module H = Hashtbl
