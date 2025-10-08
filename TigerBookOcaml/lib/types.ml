@@ -7,3 +7,4 @@
   | INT 
   | STRING 
   | ARRAY of ty * unique 
+  | NAME of Symbol.symbol * (ty option) ref
