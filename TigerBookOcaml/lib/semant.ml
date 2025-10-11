@@ -126,11 +126,12 @@ module Semant : SEMANT = struct
       end
     | RecordExp({fields; typ; pos}) -> 
       failwith "todo"
-    | SeqExp([]) -> exptyFromType NIL 
-    | SeqExp([(exp, _)]) ->
-      transExp(v_env, t_env, exp)
-    | SeqExp(_ :: tl) ->
-      transExp(v_env, t_env, SeqExp(tl))
+    | SeqExp (es) ->
+      let rec go = function
+      | []      -> exptyFromType NIL
+      | [e,_]   -> transExp (v_env, t_env, e)
+      | (e,_)::tl -> ignore (transExp (v_env, t_env, e)); go tl
+    in go es
     | AssignExp({var; exp; pos}) ->
       failwith "todo"
     | _ -> failwith "todo"
