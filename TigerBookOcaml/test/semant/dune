@@ -1,0 +1,29 @@
+(library
+ (name test_literals)
+ (modules test_literals)
+ (libraries alcotest tiger)
+ (flags (:standard -w -21)))
+
+(library
+ (name test_variables)
+ (modules test_variables)
+ (libraries alcotest tiger)
+ (flags (:standard -w -21)))
+
+(library
+ (name test_operators)
+ (modules test_operators)
+ (libraries alcotest tiger)
+ (flags (:standard -w -21)))
+
+(library
+ (name test_functions)
+ (modules test_functions)
+ (libraries alcotest tiger)
+ (flags (:standard -w -21)))
+
+(library
+ (name test_control_flow)
+ (modules test_control_flow)
+ (libraries alcotest tiger)
+ (flags (:standard -w -21)))

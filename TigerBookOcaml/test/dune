@@ -1,4 +1,4 @@
 (test
- (name test_ml)
- (libraries alcotest tiger)
- (modules test_ml))
+ (name test_all)
+ (libraries alcotest tiger test_ast test_symbol test_types test_lexer test_parser test_env test_literals test_variables test_operators test_functions test_control_flow)
+ (flags (:standard -w -21)))
