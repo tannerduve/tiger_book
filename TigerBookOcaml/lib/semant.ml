@@ -1,4 +1,4 @@
-(* Semantic analysis (type c) for Tiger language *)
+(* Semantic analysis (type checking) for Tiger language *)
 
 type venv = Env.enventry Symbol.table
 type tenv = Env.ty Symbol.table
@@ -41,6 +41,12 @@ let lookupType (s, p, t : Symbol.symbol * Ast.pos * tenv) =
   match Symbol.look s t with 
   | Some t -> actual_ty t 
   | None -> error p ("undefined variable: " ^ Symbol.name s)
+
+let addParamstoEnv (v_env : venv) (t_env : tenv) (fields : Ast.field list) =
+  List.fold_left ( fun acc (fd : Ast.field) ->
+    let fdTy = lookupType(fd.typ, fd.pos, t_env) in
+    acc |> Symbol.add fd.name (Env.VarEntry(fdTy))
+  ) v_env fields
 
 let fieldsToTy (params, tenv : Ast.field list * tenv) = 
   List.map (fun (f : Ast.field) -> lookupType (f.typ, f.pos, tenv)) params
@@ -135,9 +141,13 @@ and transExp (v_env, t_env, e : venv * tenv * Ast.exp) : expty =
         begin match else_ with 
         | Some exp -> 
           let elseTy = actual_ty (transExp (v_env, t_env, exp)).ty in
-          if compatible (thenTy, elseTy) then exptyFromType thenTy else 
-          error pos "then and else branch must have same type"
-        | None -> if thenTy = UNIT then exptyFromType thenTy else error pos "if-then expression must have type unit"
+          if compatible (thenTy, elseTy) then 
+            exptyFromType thenTy else 
+              error pos "then and else branch must have same type"
+        | None -> 
+          if thenTy = UNIT then 
+            exptyFromType thenTy else 
+              error pos "if-then expression must have type unit"
         end
       | _ -> error pos "integer required in `if` branch"
       end
@@ -147,15 +157,33 @@ and transExp (v_env, t_env, e : venv * tenv * Ast.exp) : expty =
   and transDec (v_env, t_env, d : venv * tenv * Ast.dec) : envs = 
     match d with 
     | FunctionDec l -> 
+      (* For mutual recursion: create a local environment of all functions in the declaration with their declared types *)
+      let fun_env = List.fold_left 
+      (fun acc (fndec : Ast.fundec) ->
+        acc |> (Symbol.add fndec.name (Env.FunEntry {formals = fieldsToTy(fndec.params, t_env); result = 
+        begin match fndec.result with 
+        | Some (s, p) -> lookupType(s, p, t_env) 
+        | None -> Types.UNIT
+        end
+        }))
+        ) v_env l
+      in
+      (* Helper: *)
       let funHelper (v_env : venv) (fd : Ast.fundec) : venv =
-        let fdty = actual_ty (transExp (v_env, t_env, fd.body)).ty in
-        let fdname = (Env.FunEntry { formals = fieldsToTy(fd.params, t_env); result = fdty }) in
+        (* Create local env with paramters mapped to their declared types (allows recursion) *)
+        let local_env = addParamstoEnv v_env t_env fd.params in
+        (* Typecheck the body of the function *)
+        let fdty = actual_ty (transExp (local_env, t_env, fd.body)).ty in
+        (* Construct an entry - look up the types of the params and let the result be the body type *)
+        let fdentry = (Env.FunEntry { formals = fieldsToTy(fd.params, t_env); result = fdty }) in
         begin match fd.result with 
-        | Some (s, p) -> if fdty = lookupType(s, p, t_env) then v_env |> (Symbol.add fd.name fdname) else error p "function body does not match expected type"
-        | None -> v_env |> (Symbol.add fd.name fdname)
+        | Some (s, p) -> 
+          if fdty = lookupType(s, p, t_env) then v_env |> (Symbol.add fd.name fdentry) else error p "function body does not match expected type"
+        | None -> if fdty = Types.UNIT then v_env |> (Symbol.add fd.name (Env.FunEntry { formals = fieldsToTy(fd.params, t_env); result = Types.UNIT })) 
+          else error fd.pos "function body does not match expected type"
       end
       in 
-      let new_v_env = List.fold_left funHelper v_env l in
+      let new_v_env = List.fold_left funHelper fun_env l in
       { venv = new_v_env; tenv = t_env }
     | VarDec ( {name; escape=_; typ; init; pos} ) -> 
       let bodty = actual_ty (transExp (v_env, t_env, init)).ty in 
