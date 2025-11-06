@@ -163,7 +163,7 @@ and transExp (v_env, t_env, e : venv * tenv * Ast.exp) : expty =
         acc |> (Symbol.add fndec.name (Env.FunEntry {formals = fieldsToTy(fndec.params, t_env); result = 
         begin match fndec.result with 
         | Some (s, p) -> lookupType(s, p, t_env) 
-        | None -> Types.UNIT
+        | None -> actual_ty (transExp (v_env, t_env, fndec.body)).ty
         end
         }))
         ) v_env l
@@ -179,8 +179,7 @@ and transExp (v_env, t_env, e : venv * tenv * Ast.exp) : expty =
         begin match fd.result with 
         | Some (s, p) -> 
           if fdty = lookupType(s, p, t_env) then v_env |> (Symbol.add fd.name fdentry) else error p "function body does not match expected type"
-        | None -> if fdty = Types.UNIT then v_env |> (Symbol.add fd.name (Env.FunEntry { formals = fieldsToTy(fd.params, t_env); result = Types.UNIT })) 
-          else error fd.pos "function body does not match expected type"
+        | None -> v_env |> (Symbol.add fd.name fdentry) 
       end
       in 
       let new_v_env = List.fold_left funHelper fun_env l in

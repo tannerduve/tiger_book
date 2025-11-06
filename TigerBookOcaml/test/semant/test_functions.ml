@@ -41,7 +41,7 @@ let test_function_declaration () =
        Alcotest.(check bool "Function has correct result type" is_int true)
    | _ -> Alcotest.fail "Function not found in environment")
 
-(* Test function with parameters - SHOULD FAIL due to bug! *)
+(* Test function with parameters *)
 let test_function_with_params () =
   let pos = 0 in
   let sym = Symbol.symbol in
@@ -64,19 +64,169 @@ let test_function_with_params () =
     }
   ] in
   
-  (* This SHOULD work but currently fails due to bug *)
-  try
-    let _ = Semant.transDec (venv, tenv, fun_with_params) in
-    Alcotest.fail "BUG: Function body should access parameters but raises error"
-  with
-  | Semant.Semantic_error (_, msg) when String.starts_with ~prefix:"undefined variable" msg ->
-      (* Expected failure due to known bug *)
-      Alcotest.(check bool "Known bug: params not in scope" true true)
-  | _ -> Alcotest.fail "Wrong exception type"
+  (* Function should successfully typecheck with parameter in scope *)
+  let result = Semant.transDec (venv, tenv, fun_with_params) in
+  let new_venv = result.venv in
+  
+  (match Symbol.look (sym "g") new_venv with
+   | Some (Env.FunEntry {formals; result=res_ty}) ->
+       Alcotest.(check bool "Function has one parameter" (List.length formals = 1) true);
+       let param_is_int = match List.hd formals with Types.INT -> true | _ -> false in
+       Alcotest.(check bool "Parameter has INT type" param_is_int true);
+       let result_is_int = match Semant.actual_ty res_ty with Types.INT -> true | _ -> false in
+       Alcotest.(check bool "Result has INT type" result_is_int true)
+   | _ -> Alcotest.fail "Function with params not found")
+
+(* Test recursive function declaration *)
+let test_recursive_function () =
+  let pos = 0 in
+  let sym = Symbol.symbol in
+  let venv = Env.base_venv in
+  let tenv = Env.base_tenv in
+  
+  let param_field = {
+    Ast.name = sym "n";
+    escape = ref false;
+    typ = Symbol.symbol "int";
+    pos = pos
+  } in
+  
+  (* Recursive factorial: function fact(n: int): int = if n = 0 then 1 else n * fact(n-1) *)
+  let recursive_fun = Ast.FunctionDec [
+    {
+      name = sym "fact";
+      params = [param_field];
+      result = Some (Symbol.symbol "int", pos);
+      body = Ast.IfExp {
+        test = Ast.OpExp {
+          left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+          oper = Ast.EqOp;
+          right = Ast.IntExp 0;
+          pos = pos
+        };
+        then_ = Ast.IntExp 1;
+        else_ = Some (Ast.OpExp {
+          left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+          oper = Ast.TimesOp;
+          right = Ast.CallExp {
+            func = sym "fact";
+            args = [Ast.OpExp {
+              left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+              oper = Ast.MinusOp;
+              right = Ast.IntExp 1;
+              pos = pos
+            }];
+            pos = pos
+          };
+          pos = pos
+        });
+        pos = pos
+      };
+      pos = pos
+    }
+  ] in
+  
+  (* Recursive function should typecheck - function can call itself *)
+  let result = Semant.transDec (venv, tenv, recursive_fun) in
+  let new_venv = result.venv in
+  
+  (match Symbol.look (sym "fact") new_venv with
+   | Some (Env.FunEntry {formals; result=res_ty}) ->
+       Alcotest.(check bool "Recursive function has one parameter" (List.length formals = 1) true);
+       let result_is_int = match Semant.actual_ty res_ty with Types.INT -> true | _ -> false in
+       Alcotest.(check bool "Recursive function returns INT" result_is_int true)
+   | _ -> Alcotest.fail "Recursive function not found")
+
+(* Test mutually recursive functions *)
+let test_mutually_recursive_functions () =
+  let pos = 0 in
+  let sym = Symbol.symbol in
+  let venv = Env.base_venv in
+  let tenv = Env.base_tenv in
+  
+  let param_field = {
+    Ast.name = sym "n";
+    escape = ref false;
+    typ = Symbol.symbol "int";
+    pos = pos
+  } in
+  
+  (* Mutually recursive even/odd functions *)
+  let mutual_funs = Ast.FunctionDec [
+    {
+      (* function even(n: int): int = if n = 0 then 1 else odd(n-1) *)
+      name = sym "even";
+      params = [param_field];
+      result = Some (Symbol.symbol "int", pos);
+      body = Ast.IfExp {
+        test = Ast.OpExp {
+          left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+          oper = Ast.EqOp;
+          right = Ast.IntExp 0;
+          pos = pos
+        };
+        then_ = Ast.IntExp 1;
+        else_ = Some (Ast.CallExp {
+          func = sym "odd";
+          args = [Ast.OpExp {
+            left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+            oper = Ast.MinusOp;
+            right = Ast.IntExp 1;
+            pos = pos
+          }];
+          pos = pos
+        });
+        pos = pos
+      };
+      pos = pos
+    };
+    {
+      (* function odd(n: int): int = if n = 0 then 0 else even(n-1) *)
+      name = sym "odd";
+      params = [param_field];
+      result = Some (Symbol.symbol "int", pos);
+      body = Ast.IfExp {
+        test = Ast.OpExp {
+          left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+          oper = Ast.EqOp;
+          right = Ast.IntExp 0;
+          pos = pos
+        };
+        then_ = Ast.IntExp 0;
+        else_ = Some (Ast.CallExp {
+          func = sym "even";
+          args = [Ast.OpExp {
+            left = Ast.VarExp (Ast.SimpleVar (sym "n", pos));
+            oper = Ast.MinusOp;
+            right = Ast.IntExp 1;
+            pos = pos
+          }];
+          pos = pos
+        });
+        pos = pos
+      };
+      pos = pos
+    }
+  ] in
+  
+  (* Mutually recursive functions should typecheck *)
+  let result = Semant.transDec (venv, tenv, mutual_funs) in
+  let new_venv = result.venv in
+  
+  (* Check both functions are in environment *)
+  (match Symbol.look (sym "even") new_venv with
+   | Some (Env.FunEntry _) -> Alcotest.(check bool "even function found" true true)
+   | _ -> Alcotest.fail "even function not found");
+  
+  (match Symbol.look (sym "odd") new_venv with
+   | Some (Env.FunEntry _) -> Alcotest.(check bool "odd function found" true true)
+   | _ -> Alcotest.fail "odd function not found")
 
 let tests = [
   Alcotest.test_case "Built-in function call" `Quick test_builtin_function;
   Alcotest.test_case "Function declaration" `Quick test_function_declaration;
-  Alcotest.test_case "Function with params (KNOWN BUG)" `Quick test_function_with_params;
+  Alcotest.test_case "Function with params" `Quick test_function_with_params;
+  Alcotest.test_case "Recursive function" `Quick test_recursive_function;
+  Alcotest.test_case "Mutually recursive functions" `Quick test_mutually_recursive_functions;
 ]
 
