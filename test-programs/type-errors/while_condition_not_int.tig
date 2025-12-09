@@ -1,0 +1,4 @@
+/* Type error: while condition must be int */
+while "hello" do ()
+
+

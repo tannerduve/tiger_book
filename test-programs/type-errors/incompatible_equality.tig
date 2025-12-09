@@ -1,0 +1,4 @@
+/* Type error: cannot compare int and string */
+42 = "hello"
+
+

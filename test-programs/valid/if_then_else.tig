@@ -1,0 +1,4 @@
+/* Test if-then-else with matching types */
+if 1 then 42 else 99
+
+

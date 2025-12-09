@@ -1,0 +1,8 @@
+/* Type error: trying to call a variable as function */
+let
+  var x : int := 42
+in
+  x(5)
+end
+
+

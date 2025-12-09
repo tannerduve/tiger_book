@@ -1,0 +1,3 @@
+/* Test while loop */
+while 0 do break
+

@@ -1,0 +1,4 @@
+/* Type error: if branches have different types */
+if 1 then 42 else "hello"
+
+

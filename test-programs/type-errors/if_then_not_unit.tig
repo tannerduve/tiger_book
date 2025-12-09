@@ -1,0 +1,4 @@
+/* Type error: if-then without else must be unit */
+if 1 then 42
+
+

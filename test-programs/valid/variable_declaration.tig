@@ -1,0 +1,8 @@
+/* Test variable declaration */
+let
+  var x : int := 42
+in
+  x
+end
+
+

@@ -1,0 +1,8 @@
+/* Type error: wrong argument type */
+let
+  function double(x: int) : int = x + x
+in
+  double("hello")
+end
+
+

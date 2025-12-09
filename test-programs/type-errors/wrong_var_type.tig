@@ -1,0 +1,8 @@
+/* Type error: variable declared as int but initialized with string */
+let
+  var x : int := "hello"
+in
+  x
+end
+
+

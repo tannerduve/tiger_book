@@ -1,0 +1,8 @@
+/* Test function with parameters */
+let
+  function add(x: int, y: int) : int = x + y
+in
+  add(10, 32)
+end
+
+

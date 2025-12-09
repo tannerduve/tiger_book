@@ -1,0 +1,4 @@
+/* Type error: if condition must be int */
+if "hello" then 1 else 0
+
+

@@ -1,0 +1,8 @@
+/* Type error: assignment type mismatch */
+let
+  var x : int := 42
+in
+  x := "hello"
+end
+
+

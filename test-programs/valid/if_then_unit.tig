@@ -1,0 +1,3 @@
+/* Test if-then without else (must be unit) */
+if 1 then break
+

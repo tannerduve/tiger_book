@@ -1,0 +1,8 @@
+/* Type error: function returns wrong type */
+let
+  function getInt() : int = "hello"
+in
+  getInt()
+end
+
+

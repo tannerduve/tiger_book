@@ -1,0 +1,4 @@
+/* Test arithmetic operations */
+(5 + 3) * (10 - 2) / 4
+
+

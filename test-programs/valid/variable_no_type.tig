@@ -1,0 +1,8 @@
+/* Test variable declaration without type annotation */
+let
+  var x := 42
+in
+  x + 10
+end
+
+

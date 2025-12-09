@@ -1,0 +1,8 @@
+/* Type error: wrong number of arguments */
+let
+  function add(x: int, y: int) : int = x + y
+in
+  add(5)
+end
+
+

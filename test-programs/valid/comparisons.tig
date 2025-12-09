@@ -1,0 +1,4 @@
+/* Test comparison operations */
+if 5 < 10 then 1 else 0
+
+

@@ -1,0 +1,4 @@
+/* Type error: while body must be unit */
+while 1 do 42
+
+
